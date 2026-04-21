@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
+import numpy as np
 import soundfile as sf
 import torch
 
@@ -28,6 +29,7 @@ def transcribe_audio(input_path: Path) -> str:
 
 
 def synthesize_with_csm(text: str, speaker_id: int, output_path: Path) -> int:
+    settings = get_settings()
     processor, model = get_csm_stack()
     conversation = [
         {"role": str(speaker_id), "content": [{"type": "text", "text": text}]},
@@ -38,9 +40,33 @@ def synthesize_with_csm(text: str, speaker_id: int, output_path: Path) -> int:
         return_dict=True,
     ).to(model.device)
     with torch.inference_mode():
-        audio = model.generate(**inputs, output_audio=True)
+        audio = model.generate(
+            **inputs,
+            output_audio=True,
+            do_sample=settings.tts_do_sample,
+            temperature=settings.tts_temperature,
+            depth_decoder_do_sample=settings.tts_depth_decoder_do_sample,
+            depth_decoder_temperature=settings.tts_depth_decoder_temperature,
+        )
     processor.save_audio(audio, str(output_path))
-    return getattr(processor.feature_extractor, "sampling_rate", 24_000)
+    sample_rate = getattr(processor.feature_extractor, "sampling_rate", 24_000)
+    append_tail_silence(output_path, sample_rate, settings.tts_tail_silence_ms)
+    return sample_rate
+
+
+def append_tail_silence(audio_path: Path, sample_rate: int, silence_ms: int) -> None:
+    if silence_ms <= 0 or sample_rate <= 0:
+        return
+    data, current_sample_rate = sf.read(audio_path)
+    target_sample_rate = int(current_sample_rate or sample_rate)
+    silence_frames = int(target_sample_rate * silence_ms / 1000)
+    if silence_frames <= 0:
+        return
+    if getattr(data, "ndim", 1) == 1:
+        pad = np.zeros(silence_frames, dtype=data.dtype)
+    else:
+        pad = np.zeros((silence_frames, data.shape[1]), dtype=data.dtype)
+    sf.write(audio_path, np.concatenate([data, pad], axis=0), target_sample_rate)
 
 
 def run_pipeline(
@@ -75,7 +101,6 @@ def pcm16_bytes_to_wav(raw_audio: bytes, destination: Path, sample_rate: int, ch
     frame_count = len(raw_audio) // 2
     if frame_count == 0:
         raise ValueError("No audio frames supplied.")
-    import numpy as np
 
     audio = np.frombuffer(raw_audio, dtype="<i2")
     if channels > 1:

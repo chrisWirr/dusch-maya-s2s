@@ -18,6 +18,15 @@ class Settings:
     whisper_device: str = os.getenv("WHISPER_DEVICE", "cpu")
     device: str = os.getenv("DEVICE", "auto")
     torch_dtype: str = os.getenv("TORCH_DTYPE", "auto")
+    tts_do_sample: bool = os.getenv("TTS_DO_SAMPLE", "false").lower() == "true"
+    tts_temperature: float = float(os.getenv("TTS_TEMPERATURE", "1.0"))
+    tts_depth_decoder_do_sample: bool = (
+        os.getenv("TTS_DEPTH_DECODER_DO_SAMPLE", "false").lower() == "true"
+    )
+    tts_depth_decoder_temperature: float = float(
+        os.getenv("TTS_DEPTH_DECODER_TEMPERATURE", "1.0")
+    )
+    tts_tail_silence_ms: int = int(os.getenv("TTS_TAIL_SILENCE_MS", "180"))
     app_host: str = os.getenv("APP_HOST", "0.0.0.0")
     app_port: int = int(os.getenv("PORT", os.getenv("APP_PORT", "8000")))
     output_dir: Path = Path(os.getenv("OUTPUT_DIR", "artifacts"))
