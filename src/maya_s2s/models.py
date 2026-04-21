@@ -12,10 +12,23 @@ from maya_s2s.config import Settings, get_settings
 logger = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=1)
+def cuda_runtime_available() -> bool:
+    if not torch.cuda.is_available():
+        return False
+    try:
+        # Force a lightweight runtime touch so we don't trust a broken CUDA setup.
+        torch.zeros(1, device="cuda")
+        return True
+    except Exception as exc:  # pragma: no cover - hardware/runtime dependent
+        logger.warning("CUDA runtime unavailable, falling back to CPU: %s", exc)
+        return False
+
+
 def resolve_device(requested: str) -> str:
     if requested != "auto":
         return requested
-    if torch.cuda.is_available():
+    if cuda_runtime_available():
         return "cuda"
     if torch.backends.mps.is_available():
         return "mps"
@@ -59,28 +72,52 @@ def get_text_model():
     if settings.text_model_backend != "local":
         return None, None
 
-    device = resolve_device(settings.device)
-    dtype = resolve_dtype(settings.torch_dtype, device)
+    requested_device = resolve_device(settings.device)
+    if requested_device == "cpu":
+        raise RuntimeError("Local text model requires an accelerated device for acceptable latency.")
     tokenizer = AutoTokenizer.from_pretrained(settings.text_model_id)
-    model = AutoModelForCausalLM.from_pretrained(
-        settings.text_model_id,
-        torch_dtype=dtype,
-        low_cpu_mem_usage=True,
-    )
-    model.to(device)
-    return tokenizer, model
+
+    dtype = resolve_dtype(settings.torch_dtype, requested_device)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            settings.text_model_id,
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+        )
+        model.to(requested_device)
+        return tokenizer, model
+    except RuntimeError as exc:
+        logger.warning("Local text model unavailable on %s: %s", requested_device, exc)
+        raise
 
 
 @lru_cache(maxsize=1)
 def get_csm_stack():
     settings = get_runtime_settings()
-    device = resolve_device(settings.device)
-    dtype = resolve_dtype(settings.torch_dtype, device)
     processor = AutoProcessor.from_pretrained(settings.csm_model_id)
+    requested_device = resolve_device(settings.device)
+
+    for device in [requested_device, "cpu"]:
+        if device == "cpu" and requested_device == "cpu":
+            continue
+        dtype = resolve_dtype(settings.torch_dtype, device)
+        try:
+            model = CsmForConditionalGeneration.from_pretrained(
+                settings.csm_model_id,
+                torch_dtype=dtype,
+                low_cpu_mem_usage=True,
+            )
+            model.to(device)
+            return processor, model
+        except RuntimeError as exc:
+            if device != "cuda":
+                raise
+            logger.warning("Falling back to CPU CSM after CUDA init failure: %s", exc)
+
     model = CsmForConditionalGeneration.from_pretrained(
         settings.csm_model_id,
-        torch_dtype=dtype,
+        torch_dtype=resolve_dtype(settings.torch_dtype, "cpu"),
         low_cpu_mem_usage=True,
     )
-    model.to(device)
+    model.to("cpu")
     return processor, model

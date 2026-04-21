@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import re
 
 from maya_s2s.conversation import ConversationState
 from maya_s2s.config import Settings
 from maya_s2s.models import get_text_model
+
+logger = logging.getLogger(__name__)
 
 
 def clamp_reply(text: str, settings: Settings) -> str:
@@ -39,9 +42,13 @@ def build_reply(
             "Use 'echo' or 'local'."
         )
 
-    tokenizer, model = get_text_model()
+    try:
+        tokenizer, model = get_text_model()
+    except RuntimeError as exc:
+        logger.warning("Falling back to echo reply after local text model failure: %s", exc)
+        return clamp_reply("Verstanden.", settings)
     if tokenizer is None or model is None:
-        raise RuntimeError("Local text model could not be initialized.")
+        return clamp_reply("Verstanden.", settings)
 
     if conversation is not None:
         if not conversation.system_prompt:
