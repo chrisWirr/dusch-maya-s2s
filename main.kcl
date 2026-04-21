@@ -1,0 +1,8 @@
+sketch001 = startSketchOn(YZ)
+profile001 = startProfile(sketch001, at = [0, 0])
+  |> yLine(length = 5.94)
+  |> line(endAbsolute = [profileStartX(%), profileStartY(%)])
+  |> close()
+profile002 = startProfile(sketch001, at = [3.56, 0])
+sketch001 = startSketchOn(YZ)
+profile001 = startProfile(sketch001, at = [0, 0])

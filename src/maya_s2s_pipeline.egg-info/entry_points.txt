@@ -1,0 +1,3 @@
+[console_scripts]
+maya-s2s = maya_s2s.cli:main
+maya-s2s-server = maya_s2s.server:main

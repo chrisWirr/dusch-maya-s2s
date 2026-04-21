@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maya S2S Demo</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Sesame CSM-1B Speech-to-Speech</p>
+        <h1>Maya-artige Demo mit lokalem oder Cloud-GPU Backend</h1>
+        <p class="intro">
+          Browser-Mikrofon streamt als PCM16 an den WebSocket-Endpoint. Der Server macht
+          Turn-Detection, STT, Antwortgenerierung und TTS mit <code>sesame/csm-1b</code>.
+        </p>
+      </section>
+
+      <section class="panel controls">
+        <label>
+          Systemprompt
+          <textarea id="prompt" rows="3">Antworte warm, direkt und knapp auf Deutsch.</textarea>
+        </label>
+
+        <div class="row">
+          <label>
+            Speaker ID
+            <input id="speakerId" type="number" min="0" step="1" value="0" />
+          </label>
+          <label>
+            WebSocket URL
+            <input id="wsUrl" type="text" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="connectBtn">Verbinden</button>
+          <button id="startBtn" disabled>Aufnahme starten</button>
+          <button id="stopBtn" disabled>Aufnahme stoppen</button>
+          <button id="flushBtn" disabled>Turn flushen</button>
+          <button id="resetBtn" disabled>Dialog reset</button>
+        </div>
+      </section>
+
+      <section class="panel status-grid">
+        <div>
+          <span class="label">Status</span>
+          <strong id="status">Nicht verbunden</strong>
+        </div>
+        <div>
+          <span class="label">Session</span>
+          <strong id="sessionId">-</strong>
+        </div>
+        <div>
+          <span class="label">Streaming</span>
+          <strong id="streamState">Aus</strong>
+        </div>
+      </section>
+
+      <section class="panel transcript">
+        <div class="panel-head">
+          <h2>Dialog</h2>
+          <span id="vadState" class="badge">Idle</span>
+        </div>
+        <div id="messages" class="messages"></div>
+      </section>
+
+      <section class="panel audio-panel">
+        <div class="panel-head">
+          <h2>Antwort-Audio</h2>
+        </div>
+        <audio id="replyAudio" controls></audio>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>

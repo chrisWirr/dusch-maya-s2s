@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maya-s2s-pipeline"
+version = "0.1.0"
+description = "Speech-to-speech pipeline built around sesame/csm-1b with local and cloud GPU deployment paths."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "accelerate>=1.2.1",
+  "fastapi>=0.115.0",
+  "faster-whisper>=1.1.1",
+  "huggingface-hub>=0.30.0",
+  "numpy>=1.26.4",
+  "python-dotenv>=1.0.1",
+  "python-multipart>=0.0.9",
+  "soundfile>=0.12.1",
+  "torch>=2.5.1",
+  "torchaudio>=2.5.1",
+  "transformers>=4.57.0",
+  "uvicorn[standard]>=0.32.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.3",
+  "ruff>=0.7.3",
+]
+
+[project.scripts]
+maya-s2s = "maya_s2s.cli:main"
+maya-s2s-server = "maya_s2s.server:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
