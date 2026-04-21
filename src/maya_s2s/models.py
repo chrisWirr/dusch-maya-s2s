@@ -55,7 +55,7 @@ def get_runtime_settings() -> Settings:
 @lru_cache(maxsize=1)
 def get_whisper_model() -> WhisperModel:
     settings = get_runtime_settings()
-    device = resolve_device(settings.device)
+    device = resolve_device(settings.whisper_device)
     compute_type = "float16" if device == "cuda" else "int8"
     try:
         return WhisperModel(settings.whisper_model_size, device=device, compute_type=compute_type)

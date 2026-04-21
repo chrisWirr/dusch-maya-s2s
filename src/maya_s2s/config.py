@@ -15,6 +15,7 @@ class Settings:
     text_model_backend: str = os.getenv("TEXT_MODEL_BACKEND", "echo")
     text_model_id: str = os.getenv("TEXT_MODEL_ID", "Qwen/Qwen2.5-3B-Instruct")
     whisper_model_size: str = os.getenv("WHISPER_MODEL_SIZE", "tiny")
+    whisper_device: str = os.getenv("WHISPER_DEVICE", "cpu")
     device: str = os.getenv("DEVICE", "auto")
     torch_dtype: str = os.getenv("TORCH_DTYPE", "auto")
     app_host: str = os.getenv("APP_HOST", "0.0.0.0")
