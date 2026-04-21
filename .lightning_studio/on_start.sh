@@ -4,11 +4,6 @@ set -euo pipefail
 # Lightning Studio runs this on each start. Keep it idempotent.
 cd /teamspace/studios/this_studio
 
-if [ ! -d .venv ]; then
-  python -m venv .venv
-fi
-
-source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e .
 
