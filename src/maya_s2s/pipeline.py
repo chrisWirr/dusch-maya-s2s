@@ -9,7 +9,7 @@ import soundfile as sf
 import torch
 
 from maya_s2s.conversation import ConversationState
-from maya_s2s.config import Settings
+from maya_s2s.config import Settings, get_settings
 from maya_s2s.llm import build_reply, clamp_reply
 from maya_s2s.models import get_csm_stack, get_whisper_model
 
